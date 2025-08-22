@@ -4,7 +4,13 @@ from bs4 import BeautifulSoup
 from settings import *
 
 def scrape_swm_bath_data():
+    """
+    Main function to scrape bath facility data from SWM (Stadtwerke München) website.
+    Collects information about different baths and saunas including their IDs, names, and types.
     
+    Returns:
+        dict: Dictionary containing bath data with organization IDs as keys and bath details as values
+    """
     scraped_data = {}
 
     links = get_bath_pages(MAIN_BATHS_PAGE, CATEGORY_SUB_PAGES)
@@ -28,7 +34,16 @@ def scrape_swm_bath_data():
     return scraped_data
 
 def get_bath_pages(page_url: str, paths: "list[str]") -> set:
+    """
+    Retrieves all swimming pool page URLs from the SWM website by crawling category pages.
     
+    Args:
+        page_url (str): The base URL of the main baths page
+        paths (list[str]): List of category sub-page paths to crawl
+        
+    Returns:
+        set: A set of unique URLs for individual bath pages
+    """
     links = set()
 
     with requests.Session() as session:
@@ -52,10 +67,20 @@ def get_bath_pages(page_url: str, paths: "list[str]") -> set:
                     links.add(full_url)
         
     print(f"Found {len(links)} unique bath pages to scrape.")
+    
     return links
 
 def extract_from_items(item_soup: BeautifulSoup, result: dict) -> bool:
+    """
+    Extracts bath information from BeautifulSoup parsed HTML content.
     
+    Args:
+        item_soup (BeautifulSoup): Parsed HTML content of a bath page
+        result (dict): Dictionary to store the extracted bath information
+        
+    Returns:
+        bool: True if bath capacity information was found and extracted, False otherwise
+    """
     has_extract = False
     items = item_soup.find_all(BATH_CAPACITY_ITEM)
      
@@ -85,7 +110,15 @@ def extract_from_items(item_soup: BeautifulSoup, result: dict) -> bool:
     return has_extract
 
 def get_bath_name_from_header(soup: BeautifulSoup) -> str:
-
+    """
+    Extracts the bath name from the page header when it's not available in the capacity item.
+    
+    Args:
+        soup (BeautifulSoup): Parsed HTML content of a bath page
+        
+    Returns:
+        str: The name of the bath found in the header, or 'Unknown' if not found
+    """
     item = soup.find('h1', class_=HEADER_CLASS)
 
     if item:
@@ -94,7 +127,12 @@ def get_bath_name_from_header(soup: BeautifulSoup) -> str:
         return "Unknown"
 
 def log_and_save_results(data: "dict[int, dict]"):
+    """
+    Logs the extracted bath data to console and saves it to a JSON file.
     
+    Args:
+        data (dict[int, dict]): Dictionary containing bath information with organization IDs as keys
+    """
     result_list = list(data.values())
 
     result_list.sort(key=lambda item: (item['name'], item['type']))
@@ -108,16 +146,11 @@ def log_and_save_results(data: "dict[int, dict]"):
         json.dump(result_list, jsonf, indent=4, ensure_ascii=False)
 
 if __name__ == "__main__":
-    
     print("--- Start Scraping SWM Websites ---")
-
     extracted_info = scrape_swm_bath_data()
     
     print("\n--- Scraping Complete ---")
-
     if extracted_info:
-
         log_and_save_results(extracted_info)
-    
     else:
         print("No data was extracted.")
