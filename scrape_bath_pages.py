@@ -1,5 +1,7 @@
 import requests
-import json
+import csv
+from datetime import date
+import time
 from bs4 import BeautifulSoup
 from settings import *
 
@@ -102,7 +104,7 @@ def extract_from_items(item_soup: BeautifulSoup, result: list[dict]) -> bool:
 
             data = {
                 "id": int(organization_id),
-                "name": bath_name,
+                "name": bath_name.removesuffix(" – Hallenbad und Sauna"),
                 "type": bath_type,
             }
             result.append(data)
@@ -164,8 +166,13 @@ def log_and_save_results(data: list[dict]):
     
     print(f"Data extracted in total: {len(data)} items")
 
-    with open(OUTPUT_FILE, 'w', encoding='UTF-8') as jsonf:
-        json.dump(data, jsonf, indent=4, ensure_ascii=False)
+    file_name = OUTPUT_FILE_PREFIX + date.fromtimestamp(time.time()).isoformat() + ".csv"
+    with open(file_name, 'w', encoding='UTF-8', newline='') as csvf:
+        fieldnames = ['id', 'name', 'type']
+        writer = csv.DictWriter(csvf, fieldnames=fieldnames)
+        
+        writer.writeheader()
+        writer.writerows(data)
 
 if __name__ == "__main__":
     print("--- Start Scraping SWM Websites ---")
