@@ -11,7 +11,7 @@ def scrape_swm_bath_data():
     Returns:
         dict: Dictionary containing bath data with organization IDs as keys and bath details as values
     """
-    scraped_data = {}
+    scraped_data = []
 
     links = get_bath_pages(MAIN_BATHS_PAGE, CATEGORY_SUB_PAGES)
     
@@ -33,7 +33,7 @@ def scrape_swm_bath_data():
             
     return scraped_data
 
-def get_bath_pages(page_url: str, paths: "list[str]") -> set:
+def get_bath_pages(page_url: str, paths: list[str]) -> set:
     """
     Retrieves all swimming pool page URLs from the SWM website by crawling category pages.
     
@@ -70,7 +70,7 @@ def get_bath_pages(page_url: str, paths: "list[str]") -> set:
     
     return links
 
-def extract_from_items(item_soup: BeautifulSoup, result: dict) -> bool:
+def extract_from_items(item_soup: BeautifulSoup, result: list[dict]) -> bool:
     """
     Extracts bath information from BeautifulSoup parsed HTML content.
     
@@ -105,7 +105,7 @@ def extract_from_items(item_soup: BeautifulSoup, result: dict) -> bool:
                 "name": bath_name,
                 "type": bath_type,
             }
-            result[data["id"]] = data
+            result.append(data)
     
     return has_extract
 
@@ -125,32 +125,55 @@ def get_bath_name_from_header(soup: BeautifulSoup) -> str:
         return item.get_text()
     else:
         return "Unknown"
+    
+def consolidate_results(results: list[dict]) -> list[dict]:
+    consolidated_results = []
+    count = len(results)
 
-def log_and_save_results(data: "dict[int, dict]"):
+    for i in range(0, count):
+        item = results[i]
+        is_unique = True
+
+        for j in range(i+1, count):
+            comparer_item = results[j]
+            if item["id"] == comparer_item["id"]:
+                is_unique = False
+                if comparer_item["name"] == "Unknown":
+                    results[j] = item
+                    break
+                else:
+                    break
+        
+        if is_unique:
+            consolidated_results.append(item)
+    
+    return consolidated_results
+
+def log_and_save_results(data: list[dict]):
     """
     Logs the extracted bath data to console and saves it to a JSON file.
     
     Args:
         data (dict[int, dict]): Dictionary containing bath information with organization IDs as keys
     """
-    result_list = list(data.values())
+    
+    data.sort(key=lambda item: (item['name'], item['type']))
 
-    result_list.sort(key=lambda item: (item['name'], item['type']))
-
-    for item in result_list:
+    for item in data:
         print(f"Organization ID: {item['id']}, Bath Name: {item['name']}, Type: {item['type']}")
     
-    print(f"Data extracted in total: {len(result_list)} items")
+    print(f"Data extracted in total: {len(data)} items")
 
     with open(OUTPUT_FILE, 'w', encoding='UTF-8') as jsonf:
-        json.dump(result_list, jsonf, indent=4, ensure_ascii=False)
+        json.dump(data, jsonf, indent=4, ensure_ascii=False)
 
 if __name__ == "__main__":
     print("--- Start Scraping SWM Websites ---")
     extracted_info = scrape_swm_bath_data()
+    results = consolidate_results(extracted_info)
     
     print("\n--- Scraping Complete ---")
     if extracted_info:
-        log_and_save_results(extracted_info)
+        log_and_save_results(results)
     else:
         print("No data was extracted.")
