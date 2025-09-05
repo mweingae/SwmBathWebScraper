@@ -11,7 +11,7 @@ def scrape_swm_bath_data():
     Collects information about different baths and saunas including their IDs, names, and types.
     
     Returns:
-        dict: Dictionary containing bath data with organization IDs as keys and bath details as values
+        list[dict]: List of dictionaries containing bath data, each with 'id', 'name', and 'type' fields
     """
     scraped_data = []
 
@@ -129,6 +129,18 @@ def get_bath_name_from_header(soup: BeautifulSoup) -> str:
         return "Unknown"
     
 def consolidate_results(results: list[dict]) -> list[dict]:
+    """
+    Consolidates bath data by removing duplicates and handling unknown names.
+    
+    Args:
+        results (list[dict]): List of dictionaries containing bath information
+        
+    Returns:
+        list[dict]: Consolidated list with duplicates removed and unknown names resolved
+        
+    Note:
+        When duplicate IDs are found, entries with known names are preferred over 'Unknown' names.
+    """
     consolidated_results = []
     count = len(results)
 
@@ -153,10 +165,17 @@ def consolidate_results(results: list[dict]) -> list[dict]:
 
 def log_and_save_results(data: list[dict]):
     """
-    Logs the extracted bath data to console and saves it to a JSON file.
+    Logs the extracted bath data to console and saves it to a CSV file.
     
     Args:
-        data (dict[int, dict]): Dictionary containing bath information with organization IDs as keys
+        data (list[dict]): List of dictionaries containing bath information with fields:
+            - id: Organization ID
+            - name: Bath facility name
+            - type: Type of facility (e.g., sauna, indoor pool)
+    
+    Note:
+        The output file name includes the current date (ISO format) and is prefixed
+        with the value defined in settings.OUTPUT_FILE_PREFIX
     """
     
     data.sort(key=lambda item: (item['name'], item['type']))

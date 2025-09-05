@@ -10,8 +10,16 @@ A Python-based web scraper designed to extract information about swimming and sa
   - Bath name
   - Bath type (e.g., indoor pool, sauna)
 - Handles different types of bath pages (regular pools, saunas, indoor pools)
-- Saves data in a structured JSON format
-- Scrapped data is also logged over console
+- Saves data in a structured CSV format with date-stamped filenames
+- Console logging of the scraping process
+
+## Data Processing
+
+The scraper includes data processing features:
+- Consolidation of duplicate entries
+- Resolution of unknown facility names
+- Removal of redundant suffixes (e.g., " – Hallenbad und Sauna")
+- Sorting of results by name and type
 
 ## Requirements
 
@@ -35,19 +43,16 @@ A Python-based web scraper designed to extract information about swimming and sa
 The script will:
 1. Crawl through all bath category pages
 2. Extract information from each individual bath page
-3. Save the collected data to a JSON file
-4. Display a summary of the extracted data in the console
+3. Process and consolidate the collected data
+4. Save the results to a CSV file with the current date
+5. Display a summary of the extracted data in the console
 
 ## Output
 
-The data is saved in JSON format with the following structure:
-```json
-[
-    {
-        "id": <organization-unit-id>,
-        "name": <bath-name>,
-        "type": <bath-type>
-    },
-    ...
-]
-```
+The data is saved in CSV format with the following columns:
+- id: Organization unit ID
+- name: Bath facility name (cleaned and standardized)
+- type: Facility type (e.g., Sauna, Hallenbad)
+
+The output filename includes the current date in ISO format:
+Example: `scraping_results_2025-09-05.csv`
